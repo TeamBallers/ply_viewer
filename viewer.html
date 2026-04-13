@@ -77,47 +77,6 @@
 
   #file-input { display: none; }
 
-  #drop-zone {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    z-index: 5;
-    pointer-events: none;
-    transition: opacity 0.3s;
-  }
-  #drop-zone.hidden { opacity: 0; pointer-events: none; }
-  #drop-zone.visible { pointer-events: all; }
-
-  .drop-ring {
-    width: 160px;
-    height: 160px;
-    border: 1.5px dashed rgba(200,184,154,0.35);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: border-color 0.2s;
-  }
-  #drop-zone.dragging .drop-ring { border-color: var(--accent); }
-
-  .drop-icon {
-    width: 48px;
-    height: 48px;
-    opacity: 0.4;
-  }
-
-  .drop-label {
-    font-size: 13px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    text-align: center;
-  }
-  .drop-label span { color: var(--accent); cursor: pointer; }
-  .drop-label span:hover { text-decoration: underline; }
 
   #info-panel {
     position: absolute;
@@ -196,25 +155,12 @@
   </div>
   <div class="sep"></div>
   <button class="btn" id="reset-btn">reset camera</button>
-  <button class="btn" id="load-btn">open file</button>
-  <input type="file" id="file-input" accept=".ply">
 </div>
 
 <div id="canvas-container">
   <canvas id="three-canvas"></canvas>
 
-  <div id="drop-zone" class="visible">
-    <div class="drop-ring">
-      <svg class="drop-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="6" y="28" width="36" height="12" rx="3" stroke="#c8b89a" stroke-width="1.5"/>
-        <path d="M24 6 L24 26 M16 14 L24 6 L32 14" stroke="#c8b89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>
-    <div class="drop-label">
-      drop a <strong>.ply</strong> file here<br>
-      or <span id="browse-link">browse</span> to open
-    </div>
-  </div>
+
 
   <div id="loading">
     <div class="spinner"></div>
@@ -237,7 +183,6 @@
 <script>
 const canvas = document.getElementById('three-canvas');
 const container = document.getElementById('canvas-container');
-const dropZone = document.getElementById('drop-zone');
 const loading = document.getElementById('loading');
 const infoPanel = document.getElementById('info-panel');
 const fileInput = document.getElementById('file-input');
@@ -487,8 +432,6 @@ function loadPLY(buffer, fileName) {
       document.getElementById('info-color').textContent = hasVertexColors ? 'yes' : 'no';
 
       infoPanel.classList.add('visible');
-      dropZone.classList.remove('visible');
-      dropZone.classList.add('hidden');
     } catch (e) {
       alert('Could not parse PLY: ' + e.message);
     } finally {
@@ -579,30 +522,16 @@ container.addEventListener('touchmove', e => {
 }, { passive: false });
 container.addEventListener('touchend', () => { mouse.down = false; });
 
-container.addEventListener('dragover', e => {
-  e.preventDefault();
-  dropZone.classList.add('dragging');
-});
-container.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
-container.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('dragging');
-  const file = e.dataTransfer.files[0];
-  if (file && file.name.endsWith('.ply')) readFile(file);
-});
-
-function readFile(file) {
-  const reader = new FileReader();
-  reader.onload = ev => loadPLY(ev.target.result, file.name);
-  reader.readAsArrayBuffer(file);
-}
-
-fileInput.addEventListener('change', e => {
-  if (e.target.files[0]) readFile(e.target.files[0]);
-});
-
-document.getElementById('load-btn').addEventListener('click', () => fileInput.click());
-document.getElementById('browse-link').addEventListener('click', () => fileInput.click());
+fetch('model.ply')
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.arrayBuffer();
+  })
+  .then(buf => loadPLY(buf, 'model.ply'))
+  .catch(err => {
+    loading.classList.remove('visible');
+    alert('Could not load model.ply — make sure it is in the same folder as this HTML file.\n\n' + err.message);
+  });
 
 document.getElementById('reset-btn').addEventListener('click', resetCamera);
 
