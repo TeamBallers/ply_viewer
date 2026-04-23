@@ -562,7 +562,7 @@ const CAMERA_APIS = [
 const SERVER_API = 'http://100.101.179.51:5000';
 
 async function sendToAll(path) {
-  const requests = API_BASES.map(base =>
+  const requests = CAMERA_APIS.map(base =>
     fetch(`${base}${path}`, { method: 'POST' })
       .then(res => res.text())
   );
