@@ -210,10 +210,6 @@ const dirLight2 = new THREE.DirectionalLight(0x8aafc8, 0.4);
 dirLight2.position.set(-3, -2, -2);
 scene.add(dirLight2);
 
-const gridHelper = new THREE.GridHelper(4, 20, 0x2a2a2e, 0x1e1e22);
-gridHelper.position.y = -1;
-scene.add(gridHelper);
-
 let currentMesh = null;
 let currentMode = 'points';
 let savedGeometry = null;
@@ -277,8 +273,6 @@ function centerAndFit(geometry) {
   const maxDim = Math.max(size.x, size.y, size.z);
   const scale = 2 / maxDim;
   geometry.scale(scale, scale, scale);
-
-  gridHelper.position.y = -geometry.boundingBox ? 1 : -1;
 }
 
 function parsePLY(buffer) {
