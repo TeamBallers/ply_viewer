@@ -463,6 +463,9 @@ function updateCamera() {
   const z = orbitState.radius * Math.sin(orbitState.phi) * Math.cos(orbitState.theta);
   camera.position.set(x + orbitState.panX, y + orbitState.panY, z);
   camera.lookAt(orbitState.panX, orbitState.panY, 0);
+  const up = (orbitState.phi % (Math.PI * 2)) < Math.PI ? 1 : -1;
+  camera.up.set(0, up, 0);
+  camera.lookAt(orbitState.panX, orbitState.panY, 0);
 }
 updateCamera();
 
