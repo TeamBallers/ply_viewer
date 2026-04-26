@@ -217,6 +217,12 @@ function poll() {
     .catch(err => console.log("ERROR:", err));
 }
 
+function clearAll() {
+  fetch(`${SERVER}/delete`, { method: 'POST' })
+    .then(res => res.text())
+    .then(data => alert(data));
+}
+
 poll();
 setInterval(poll, POLL_MS);
 </script>
