@@ -485,7 +485,7 @@ window.addEventListener('mousemove', e => {
 
   if (mouse.button === 0) {
     orbitState.theta -= dx * 0.008;
-    orbitState.phi = Math.max(0.05, Math.min(Math.PI - 0.05, orbitState.phi - dy * 0.008));
+    orbitState.phi -= dy * 0.008;
   } else if (mouse.button === 2) {
     const speed = orbitState.radius * 0.001;
     orbitState.panX -= dx * speed;
@@ -516,7 +516,7 @@ container.addEventListener('touchmove', e => {
   mouse.lastX = e.touches[0].clientX;
   mouse.lastY = e.touches[0].clientY;
   orbitState.theta -= dx * 0.008;
-  orbitState.phi = Math.max(0.05, Math.min(Math.PI - 0.05, orbitState.phi - dy * 0.008));
+  orbitState.phi -= dy * 0.008;
   updateCamera();
   e.preventDefault();
 }, { passive: false });
