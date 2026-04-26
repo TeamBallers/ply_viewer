@@ -160,6 +160,8 @@
   <button class="btn" onclick="stopCapture()">Stop Capture</button>
   <button class="btn" onclick="resetData()">Reset Data</button>
   <div class="sep"></div>
+  <button class="btn" id="auto-reload-btn" onclick="setAutoReload(!autoReloadEnabled)">auto-reload: off</button>
+  <div class="sep"></div>
   <button class="btn" onclick="window.open('detection_popup.html', 'detections')">detections</button>
 </div>
 
@@ -192,6 +194,7 @@ const container = document.getElementById('canvas-container');
 const loading = document.getElementById('loading');
 const infoPanel = document.getElementById('info-panel');
 const fileInput = document.getElementById('file-input');
+const autoBtn = document.getElementById('auto-reload-btn');
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -525,16 +528,54 @@ container.addEventListener('touchmove', e => {
 }, { passive: false });
 container.addEventListener('touchend', () => { mouse.down = false; });
 
-fetch('model.ply')
-  .then(res => {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.arrayBuffer();
-  })
-  .then(buf => loadPLY(buf, 'model.ply'))
-  .catch(err => {
-    loading.classList.remove('visible');
-    alert('Could not load model.ply — make sure it is in the same folder as this HTML file.\n\n' + err.message);
-  });
+// ── Auto-reload ────────────────────────────────────────────────────────────────
+let autoReloadEnabled = false;
+let lastModified = null;
+let pollInterval = null;
+const POLL_MS = 2000; // check every 2 seconds
+
+function initialLoad() {
+  fetch('model.ply')
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      lastModified = res.headers.get('Last-Modified') || res.headers.get('Content-Length');
+      return res.arrayBuffer();
+    })
+    .then(buf => loadPLY(buf, 'model.ply'))
+    .catch(err => {
+      loading.classList.remove('visible');
+      alert('Could not load model.ply — make sure it is in the same folder as this HTML file.\n\n' + err.message);
+    });
+}
+
+async function pollForChanges() {
+  try {
+    const res = await fetch('model.ply', { method: 'HEAD', cache: 'no-store' });
+    if (!res.ok) return;
+    const sig = res.headers.get('Last-Modified') || res.headers.get('Content-Length');
+    if (sig && sig !== lastModified) {
+      lastModified = sig;
+      const buf = await fetch('model.ply', { cache: 'no-store' }).then(r => r.arrayBuffer());
+      loadPLY(buf, 'model.ply');
+    }
+  } catch (_) { /* server might be momentarily busy */ }
+}
+
+function setAutoReload(enabled) {
+  autoReloadEnabled = enabled;
+  if (enabled) {
+    pollInterval = setInterval(pollForChanges, POLL_MS);
+    autoBtn.classList.add('active');
+    autoBtn.textContent = 'auto-reload: on';
+  } else {
+    clearInterval(pollInterval);
+    pollInterval = null;
+    autoBtn.classList.remove('active');
+    autoBtn.textContent = 'auto-reload: off';
+  }
+}
+
+initialLoad();
 
 document.getElementById('reset-btn').addEventListener('click', resetCamera);
 
