@@ -640,11 +640,11 @@ function animate() {
 animate();
 
 const CAMERA_APIS = [
-  'http://100.98.116.70:5000',
+  'http://100.70.103.119:5000',
   'http://100.78.250.64:5000',
   'http://100.118.101.88:5000'
 ];
-const SERVER_API = 'http://100.80.64.72:5050';
+const SERVER_API = 'http://100.110.4.79:5050';
 
 async function sendToAll(path) {
   const requests = CAMERA_APIS.map(base =>
@@ -686,20 +686,33 @@ function applySlamState(state, label) {
 }
 
 async function pollSlamStatus() {
+  let res;
   try {
-    const res = await fetch(`${SERVER_API}/status`, { cache: 'no-store' });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-
-    if (data.model_exists) {
-      applySlamState('ready', 'model ready');
-    } else if (data.is_processing) {
-      applySlamState('working', 'building model…');
-    } else {
-      applySlamState('idle', 'no model');
-    }
+    res = await fetch(`${SERVER_API}/status`, { cache: 'no-store' });
   } catch (_) {
     applySlamState('idle', 'server unreachable');
+    return;
+  }
+
+  if (!res.ok) {
+    applySlamState('idle', 'server error ' + res.status);
+    return;
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch (_) {
+    applySlamState('idle', 'bad response');
+    return;
+  }
+
+  if (data.model_exists) {
+    applySlamState('ready', 'model ready');
+  } else if (data.is_processing) {
+    applySlamState('working', 'building model…');
+  } else {
+    applySlamState('idle', 'no model');
   }
 }
 
