@@ -707,11 +707,13 @@ async function pollSlamStatus() {
     return;
   }
 
-  if (data.is_processing) {
+  if (data.is_processing && data.model_exists) {
+    applySlamState('working', 'building new model…');
+  } else if (data.is_processing) {
     applySlamState('working', 'building model…');
-  } else {if (data.model_exists) {
+  } else if (data.model_exists) {
     applySlamState('ready', 'model ready');
-  } else 
+  } else {
     applySlamState('idle', 'no model');
   }
 }
